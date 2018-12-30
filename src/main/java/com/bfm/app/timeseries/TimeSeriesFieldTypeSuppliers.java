@@ -14,4 +14,5 @@ public class TimeSeriesFieldTypeSuppliers {
 	public static final Supplier<TLongArrayList> LONG_TYPE_SUPPLIER = TLongArrayList::new;
 	public static final Supplier<TDoubleArrayList> DOUBLE_TYPE_SUPPLIER = TDoubleArrayList::new;
 	public static final Supplier<List<String>> STRING_TYPE_SUPPLIER = () -> new ArrayList<String>();
+	
 }

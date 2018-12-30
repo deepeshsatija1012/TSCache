@@ -5,7 +5,6 @@ import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -1005,7 +1004,6 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
                 new PBQSpliterator<E>(queue, array, lo, index = mid);
         }
 
-        @SuppressWarnings("unchecked")
         public void forEachRemaining(Consumer<? super E> action) {
             Object[] a; int i, hi; // hoist accesses and checks from loop
             if (action == null)
@@ -1022,7 +1020,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
             if (action == null)
                 throw new NullPointerException();
             if (getFence() > index && index >= 0) {
-                @SuppressWarnings("unchecked") E e = (E) array[index++];
+                E e = (E) array[index++];
                 action.accept(e);
                 return true;
             }

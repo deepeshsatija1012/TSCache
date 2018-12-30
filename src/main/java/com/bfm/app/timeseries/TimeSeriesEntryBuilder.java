@@ -7,19 +7,56 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 public class TimeSeriesEntryBuilder<T extends TimeSeriesEntry> {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TimeSeriesEntryBuilder.class);
 	private Map<String, Class<?>> fieldTypeMap = new HashMap<>();
 	private String key;
 	private Supplier<T> objectBuilder;
-	private long startTimeInMillis = 0;
-	public TimeSeriesEntryBuilder(String key, Supplier<T> objectBuilder) {
-		this.key = key;
-		this.objectBuilder = objectBuilder;
+	private long actualOffSet;
+	private long lastEntry;
+	private long lastStoredEntry;
+	private long storedOffSet;
+	
+	public TimeSeriesEntryBuilder<T> reset() {
+		key = null; objectBuilder=null;
+		fieldTypeMap.clear();
+		actualOffSet = lastEntry = lastStoredEntry = storedOffSet = 0L;
+		return this;
 	}
 	
-	public TimeSeriesEntryBuilder<T> startTimeInMillis(long startTimeInMillis){
-		this.startTimeInMillis = startTimeInMillis;
+	public TimeSeriesEntryBuilder<T> key(String key){
+		this.key = key;
+		return this;
+	}
+	
+	public TimeSeriesEntryBuilder<T> objectBuilder(Supplier<T> objectBuilder){
+		this.objectBuilder = objectBuilder;
+		return this;
+	}
+	
+	public TimeSeriesEntryBuilder<T> actualOffSet(long actualOffSet){
+		this.actualOffSet = actualOffSet;
+		return this;
+	}
+
+	public TimeSeriesEntryBuilder<T> lastEntry(long lastEntry){
+		this.lastEntry = lastEntry;
+		return this;
+	}
+	
+	public TimeSeriesEntryBuilder<T> lastStoredEntry(long lastStoredEntry){
+		this.lastStoredEntry = lastStoredEntry;
+		return this;
+	}
+	
+	public TimeSeriesEntryBuilder<T> storedOffSet(long storedOffSet){
+		this.storedOffSet = storedOffSet;
+		return this;
+	}
+	
+	public TimeSeriesEntryBuilder<T> fieldTypeMap(Map<String, Class<?>> fieldTypeMap){
+		this.fieldTypeMap.putAll(fieldTypeMap);
 		return this;
 	}
 	
@@ -33,7 +70,10 @@ public class TimeSeriesEntryBuilder<T extends TimeSeriesEntry> {
 	
 	public T build() {
 		T tsEntry = objectBuilder.get();
-		tsEntry.storedOffSet = startTimeInMillis;
+		tsEntry.actualOffSet = actualOffSet;
+		tsEntry.lastEntry = lastEntry;
+		tsEntry.storedOffSet = storedOffSet;
+		tsEntry.lastStoredEntry = lastStoredEntry;
 		
 		tsEntry.key = this.key;
 		for(Map.Entry<String, Class<?>> entry : fieldTypeMap.entrySet()) {
