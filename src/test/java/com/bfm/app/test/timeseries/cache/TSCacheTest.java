@@ -1,6 +1,9 @@
 package com.bfm.app.test.timeseries.cache;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,11 +27,20 @@ public class TSCacheTest {
 	@Test
 	public void testLRU() {
 		Data dataProvider = new Data();
+		LocalDate today = LocalDate.now();
+		for(int i=0;i<2520;i++) {
+			if(today.getDayOfWeek()!=DayOfWeek.SATURDAY && today.getDayOfWeek()!=DayOfWeek.SUNDAY) {
+				today = today.plusDays(-1);
+			}
+		}
 		Function<String, ParametricTimeSeries> single = s -> dataProvider.getTimeSeries(s);
 		Function<Set<String>, Map<String, ParametricTimeSeries>> multipleEntryLoader = s -> dataProvider.getTimeSeries(s);
 		Supplier<Map<String, ParametricTimeSeries>> allEntriesLoader = () -> dataProvider.getAll();
 		Function<ParametricTimeSeries, ParametricTimeSeries> transformer = d -> d;
 		AtomicInteger count = new AtomicInteger(0);
+		Map<String, Class<?>> fieldTypeMap = new HashMap<>();
+		fieldTypeMap.put("deltas", Double.class);
+		fieldTypeMap.put("values", Double.class);
 		AtomicReference<String> keyUsed = new AtomicReference<String>("");
 		TSCache<String, ParametricTimeSeries, ParametricTimeSeries> cache = 
 				new TSCache<>("parametric", IntervalType.DAILY, single, multipleEntryLoader, allEntriesLoader, 
@@ -37,7 +49,8 @@ public class TSCacheTest {
 							String[] arr = keyUsed.get().split(",");
 							Assert.assertTrue("Key : "+ arr[0] +" E : " +arr[1]+ " A : "+ key, arr[1].equals(key));
 							System.out.println("At count "+ count.get() + " Evicted Key : "+ key);
-						}
+						}, today.atStartOfDay(), LocalDate.now().atStartOfDay(), fieldTypeMap,
+						ParametricTimeSeries::new
 						);
 		
 		List<String> keys = new ArrayList<>(20);
@@ -72,11 +85,20 @@ public class TSCacheTest {
 	@Test
 	public void testLFU() {
 		Data dataProvider = new Data();
+		LocalDate today = LocalDate.now();
+		for(int i=0;i<2520;i++) {
+			if(today.getDayOfWeek()!=DayOfWeek.SATURDAY && today.getDayOfWeek()!=DayOfWeek.SUNDAY) {
+				today = today.plusDays(-1);
+			}
+		}
 		Function<String, ParametricTimeSeries> single = s -> dataProvider.getTimeSeries(s);
 		Function<Set<String>, Map<String, ParametricTimeSeries>> multipleEntryLoader = s -> dataProvider.getTimeSeries(s);
 		Supplier<Map<String, ParametricTimeSeries>> allEntriesLoader = () -> dataProvider.getAll();
 		Function<ParametricTimeSeries, ParametricTimeSeries> transformer = d -> d;
 		AtomicInteger count = new AtomicInteger(0);
+		Map<String, Class<?>> fieldTypeMap = new HashMap<>();
+		fieldTypeMap.put("deltas", Double.class);
+		fieldTypeMap.put("values", Double.class);
 		AtomicReference<String> keyUsed = new AtomicReference<String>("");
 		TSCache<String, ParametricTimeSeries, ParametricTimeSeries> cache = 
 				new TSCache<>("parametric", IntervalType.DAILY, single, multipleEntryLoader, allEntriesLoader, 
@@ -85,7 +107,8 @@ public class TSCacheTest {
 							String[] arr = keyUsed.get().split(",");
 							Assert.assertTrue("Key : "+ arr[0] +" E : " +arr[1]+ " A : "+ key, arr[1].equals(key));
 							System.out.println("At count "+ count.get() + " Evicted Key : "+ key);
-						}
+						}, today.atStartOfDay(), LocalDate.now().atStartOfDay(), fieldTypeMap,
+						ParametricTimeSeries::new
 				);
 			
 		List<String> keys = new ArrayList<>(20);

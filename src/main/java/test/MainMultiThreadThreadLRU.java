@@ -1,13 +1,11 @@
 package test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -18,31 +16,40 @@ import com.bfm.app.timeseries.cache.EvictionStrategy;
 import com.bfm.app.timeseries.cache.TSCache;
 import com.bfm.app.timeseries.classifiers.IntervalType;
 import com.bfm.app.timeseries.parametric.ParametricTimeSeries;
-import com.google.common.collect.Lists;
 
 public class MainMultiThreadThreadLRU {
-	private static int getRandomNumberInRange(int min, int max) {
-		if (min >= max) {
-			throw new IllegalArgumentException("max must be greater than min");
-		}
-		Random r = new Random();
-		return r.nextInt((max - min) + 1) + min;
-	}
+//	private static int getRandomNumberInRange(int min, int max) {
+//		if (min >= max) {
+//			throw new IllegalArgumentException("max must be greater than min");
+//		}
+//		Random r = new Random();
+//		return r.nextInt((max - min) + 1) + min;
+//	}
 	
 	public static void main(String[] args) throws InterruptedException {
+		/*
+		String cacheName, IntervalType intervalType, Function<K, D> singleEntryLoader,
+		Function<Set<K>, Map<K, D>> multipleEntryLoader, Supplier<Map<K, D>> allEntriesLoader,
+		Function<D, V> transformer, int allowedCacheSize, EvictionStrategy<K, V> evictionStrategy, 
+		EvictionListener<K, V> listener, LocalDateTime startDate, LocalDateTime endDate, Map<String, Class<?>> fieldTypeMap,
+		Supplier<V> objectSupplier
+		*/
 		Data dataProvider = new Data();
+		Map<String, Class<?>> fieldTypeMap = new HashMap<>();
+		fieldTypeMap.put("deltas", Double.class);
+		fieldTypeMap.put("values", Double.class);
 		Function<String, ParametricTimeSeries> single = s -> dataProvider.getTimeSeries(s);
 		Function<Set<String>, Map<String, ParametricTimeSeries>> multipleEntryLoader = s -> dataProvider.getTimeSeries(s);
 		Supplier<Map<String, ParametricTimeSeries>> allEntriesLoader = () -> dataProvider.getAll();
 		Function<ParametricTimeSeries, ParametricTimeSeries> transformer = d -> d;
 		AtomicInteger count = new AtomicInteger(0);
 		EvictionStrategy<String, ParametricTimeSeries> evictionStartegy = new EvictionStrategy.LFUEvictionStrategy<>();
-		List<String> evictionOrder = Lists.newArrayList("10001", "10002", "10004", "10005", "10006", "10009");
+//		List<String> evictionOrder = Lists.newArrayList("10001", "10002", "10004", "10005", "10006", "10009");
 		TSCache<String, ParametricTimeSeries, ParametricTimeSeries> cache = 
 				new TSCache<>("parametric", IntervalType.DAILY, single, multipleEntryLoader, allEntriesLoader, 
 						transformer, 10, evictionStartegy,
 						(key, value) -> System.out.println(key+ " ["+count.get()+"]"+ evictionStartegy.queue()),
-						null, null);
+						null, null, fieldTypeMap, ParametricTimeSeries::new);
 		
 		
 		List<String> keys = new ArrayList<>(20);

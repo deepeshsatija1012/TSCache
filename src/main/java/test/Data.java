@@ -34,12 +34,17 @@ public class Data {
 		Long time = today.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 		double[] levels = new double[2520];
 		Arrays.fill(levels, -0.0d);
+		long end = LocalDate.now().atStartOfDay().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 		TDoubleArrayList levelList = TDoubleArrayList.wrap(levels);
 		for(int i=10000;i<20000;i++) {
-			TimeSeriesEntryBuilder<ParametricTimeSeries> builder = new TimeSeriesEntryBuilder<>(i+"", ParametricTimeSeries::new);
+//			TimeSeriesEntryBuilder<ParametricTimeSeries> builder = new TimeSeriesEntryBuilder<>(i+"", ParametricTimeSeries::new);
+			TimeSeriesEntryBuilder<ParametricTimeSeries> builder = new TimeSeriesEntryBuilder<>();
+			builder.key(i+"");
+			builder.objectBuilder(ParametricTimeSeries::new);
 			builder.addField("deltas", Double.class);
 			builder.addField("values", Double.class);
-			builder.startTimeInMillis(time);
+			builder.actualOffSet(time);builder.lastEntry(end);
+			builder.storedOffSet(time); builder.lastStoredEntry(end);
 			TDoubleArrayList list = TDoubleArrayList.wrap(ArrayUtils.clone(DOUBLE_DATA));
 			ParametricTimeSeries ts = builder.build();
 			ts.setDeltas(list); ts.setValues(levelList);

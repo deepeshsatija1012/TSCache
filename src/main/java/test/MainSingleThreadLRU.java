@@ -1,9 +1,11 @@
 package test;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -15,20 +17,30 @@ import com.bfm.app.timeseries.classifiers.IntervalType;
 import com.bfm.app.timeseries.parametric.ParametricTimeSeries;
 
 public class MainSingleThreadLRU {
-	private static int getRandomNumberInRange(int min, int max) {
-		if (min >= max) {
-			throw new IllegalArgumentException("max must be greater than min");
-		}
-		Random r = new Random();
-		return r.nextInt((max - min) + 1) + min;
-	}
+//	private static int getRandomNumberInRange(int min, int max) {
+//		if (min >= max) {
+//			throw new IllegalArgumentException("max must be greater than min");
+//		}
+//		Random r = new Random();
+//		return r.nextInt((max - min) + 1) + min;
+//	}
 	
 	public static void main(String[] args) {
 		Data dataProvider = new Data();
+		LocalDate today = LocalDate.now();
+		for(int i=0;i<2520;i++) {
+			if(today.getDayOfWeek()!=DayOfWeek.SATURDAY && today.getDayOfWeek()!=DayOfWeek.SUNDAY) {
+				today = today.plusDays(-1);
+			}
+		}
+		
 		Function<String, ParametricTimeSeries> single = s -> dataProvider.getTimeSeries(s);
 		Function<Set<String>, Map<String, ParametricTimeSeries>> multipleEntryLoader = s -> dataProvider.getTimeSeries(s);
 		Supplier<Map<String, ParametricTimeSeries>> allEntriesLoader = () -> dataProvider.getAll();
 		Function<ParametricTimeSeries, ParametricTimeSeries> transformer = d -> d;
+		Map<String, Class<?>> fieldTypeMap = new HashMap<>();
+		fieldTypeMap.put("deltas", Double.class);
+		fieldTypeMap.put("values", Double.class);
 		AtomicInteger count = new AtomicInteger(0);
 		EvictionStrategy<String, ParametricTimeSeries> ev = new EvictionStrategy.LFUEvictionStrategy<>();
 		TSCache<String, ParametricTimeSeries, ParametricTimeSeries> cache = 
@@ -36,7 +48,7 @@ public class MainSingleThreadLRU {
 						transformer, 10, ev,
 						(key, value) -> {
 							System.out.println("At count "+ count.get() + " Evicted Key : "+ key );
-						}, null, null
+						}, today.atStartOfDay(), LocalDate.now().atStartOfDay(), fieldTypeMap, ParametricTimeSeries::new
 						);
 		
 		
