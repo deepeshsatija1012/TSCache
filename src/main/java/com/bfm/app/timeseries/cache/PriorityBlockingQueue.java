@@ -21,7 +21,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
-import sun.misc.SharedSecrets;
 import sun.misc.Unsafe;
 
 /**
@@ -80,7 +79,7 @@ import sun.misc.Unsafe;
  * @author Doug Lea
  * @param <E> the type of elements held in this collection
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings({ "unchecked", "restriction" })
 public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     implements BlockingQueue<E>, java.io.Serializable {
     private static final long serialVersionUID = 5595510919245408276L;
@@ -966,7 +965,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         try {
             s.defaultReadObject();
             int sz = q.size();
-            SharedSecrets.getJavaOISAccess().checkArray(s, Object[].class, sz);
+//            SharedSecrets.getJavaOISAccess().checkArray(s, Object[].class, sz);
             this.queue = new Object[sz];
             comparator = q.comparator();
             addAll(q);
