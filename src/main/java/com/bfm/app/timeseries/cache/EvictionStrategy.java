@@ -1,5 +1,6 @@
 package com.bfm.app.timeseries.cache;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Spliterator;
@@ -9,18 +10,45 @@ import java.util.stream.Collectors;
 //import java.util.concurrent.PriorityBlockingQueue;
 import java.util.stream.StreamSupport;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.bfm.app.timeseries.cache.TSCache.LFUNode;
 import com.bfm.app.timeseries.cache.TSCache.LRUNode;
 import com.bfm.app.timeseries.cache.TSCache.Node;
 
 public interface EvictionStrategy<K, V> {
-	
 	public void applyRead(Node<K, V> node);
 	public void applyWrite(Node<K, V> node);
 	public Node<K, V> getNode(K key, V value);
 	public Map<K, V> evict(int permits, ConcurrentHashMap<K, Node<K, V>> cache);
 	public String queue(); 
 	
+	public static class NoneEvictionStrategy<K, V> implements EvictionStrategy<K, V>{
+
+		@Override
+		public void applyRead(Node<K, V> node) {
+		}
+
+		@Override
+		public void applyWrite(Node<K, V> node) {
+		}
+
+		@Override
+		public Node<K, V> getNode(K key, V value) {
+			return new Node<K, V>(key, value);
+		}
+
+		@Override
+		public Map<K, V> evict(int permits, ConcurrentHashMap<K, Node<K, V>> cache) {
+			return Collections.emptyMap();
+		}
+
+		@Override
+		public String queue() {
+			return StringUtils.EMPTY;
+		}
+		
+	}
 	
 	public static class LRUEvictionStrategy<K, V> implements EvictionStrategy<K, V>{
 		private final LinkedDequeThreadSafe<Node<K, V>> evictionQueue = new LinkedDequeThreadSafe<>();

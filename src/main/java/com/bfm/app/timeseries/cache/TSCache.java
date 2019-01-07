@@ -25,7 +25,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 public class TSCache<K, V extends TimeSeriesEntry, D> {
-	private EvictionStrategy<K, V> evictionStrategy;
+	private EvictionStrategy<K, V> evictionStrategy = new EvictionStrategy.NoneEvictionStrategy<>();
 	static class Node<K, V> implements Linked<Node<K,V>> {
 		private Node<K, V> prev;
 		private K key;
@@ -171,7 +171,9 @@ public class TSCache<K, V extends TimeSeriesEntry, D> {
 			this.allowedCacheSize = allowedCacheSize;
 			sizeControlSemaphore = new Semaphore(allowedCacheSize, true);
 		}
-		this.evictionStrategy = evictionStrategy;
+		if(evictionStrategy!=null)
+			this.evictionStrategy = evictionStrategy;
+		
 		this.listener = listener;
 		
 		this.fieldTypeMap.putAll(fieldTypeMap);
