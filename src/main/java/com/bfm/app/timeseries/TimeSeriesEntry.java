@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -112,7 +113,7 @@ public class TimeSeriesEntry {
 	 * @param interval the calender 
 	 * @return
 	 */
-	public TimeSeriesEntry timeSequence(long start, long end, IntervalType interval) {
+	public TimeSeriesEntry sample(long start, long end, IntervalType interval) {
 		return null;
 	}
 	
@@ -132,7 +133,7 @@ public class TimeSeriesEntry {
 	 * @param unit the unit definition, Days, Months, Seconds etc 
 	 * @return
 	 */
-	public TimeSeriesEntry timeSequence(long start, long end, IntervalType interval, 
+	public TimeSeriesEntry sample(long start, long end, IntervalType interval, 
 			long unitJump, ChronoField unit) {
 		return null;
 	}
@@ -153,7 +154,7 @@ public class TimeSeriesEntry {
 	 * 			function is used
 	 * @return
 	 */
-	public TimeSeriesEntry calculate(long start, long end, IntervalType interval, 
+	public TimeSeriesEntry apply(long start, long end, IntervalType interval, 
 			@SuppressWarnings("rawtypes") Map<String, Function> fieldBasedFunctionMap) {
 		return null;
 	}
@@ -172,13 +173,34 @@ public class TimeSeriesEntry {
 	 * @param interval the calender 
 	 * @param fieldBasedFunctionMap the function to apply on each field, if not available identity
 	 * 			function is used
-	 * @param unitJump the number of units to jump for next time series observation
-	 * @param unit the unit definition, Days, Months, Seconds etc 
+	 * @param increment the number of units to increment for next time series observation
 	 * @return
 	 */
-	public TimeSeriesEntry calculate(long start, long end, IntervalType interval, 
+	public TimeSeriesEntry apply(long start, long end, IntervalType interval, 
 			@SuppressWarnings("rawtypes") Map<String, Function> fieldBasedFunctionMap,
-			long unitJump, ChronoField unit) {
+			long increment, ChronoField unit) {
+		return null;
+	}
+	
+	/**
+	 * Create a new rolling time series with the function applied to each entry for a univariate TimeSeries
+	 * and each row of a multivarite time series
+	 * 
+	 * the function returns a new  {@code TimeSeriesEntry} with 
+	 * <code>start >= current time series start time</code>
+	 * <code>end <= current time series end time</code>
+	 * 
+	 * with the applicable calendar defined by {@code IntervalType}
+	 * @param start start time since epoch from where you wish to retrieve the time series
+	 * @param end end time since epoch until which wish to retrieve the time series
+	 * @param interval the calender 
+	 * @param fieldBasedAccumulatorMap the function to applies to time series during accumulation window
+	 * @param windowSize the window size
+	 * @return
+	 */
+	public TimeSeriesEntry roll(long start, long end, IntervalType interval, 
+			@SuppressWarnings("rawtypes") Map<String, BinaryOperator> fieldBasedAccumulatorMap,
+			long windowSize) {
 		return null;
 	}
 	
@@ -200,7 +222,7 @@ public class TimeSeriesEntry {
 	 * @return
 	 */
 	@SuppressWarnings("rawtypes")
-	public TimeSeriesEntry calculateWithFilter(long start, long end, IntervalType interval, 
+	public TimeSeriesEntry applyWithFilter(long start, long end, IntervalType interval, 
 			Map<String, Function> fieldBasedFunctionMap,
 			Map<String, Predicate> fieldPredicateMap) {
 		return null;
@@ -221,15 +243,15 @@ public class TimeSeriesEntry {
 	 * @param fieldBasedFunctionMap the function to apply on each field, if not available identity
 	 * 			function is used
 	 * @param fieldPredicateMap Map containing predicate to be applied 
-	 * @param unitJump the number of units to jump for next time series observation
+	 * @param increment the number of units to increment for next time series observation
 	 * @param unit the unit definition, Days, Months, Seconds etc 
 	 * @return
 	 */
 	@SuppressWarnings("rawtypes") 
-	public TimeSeriesEntry calculateWithFilter(long start, long end, IntervalType interval, 
+	public TimeSeriesEntry applyWithFilter(long start, long end, IntervalType interval, 
 			Map<String, Function> fieldBasedFunctionMap,
 			Map<String, Predicate> fieldPredicateMap,
-			long unitJump, ChronoField unit) {
+			long increment, ChronoField unit) {
 		return null;
 	}
 	
