@@ -15,17 +15,78 @@ import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 
+
+/**
+ * This object stores the time series of fields of following types :<br/>
+ * 	1. INTEGER; 2. LONG; 3. DOUBLE; 4. STRING<br/>
+ * <br/>
+ * lets say we have a time series for a Key 'K' with following field, with dates 2018-12-03 to 2018-12-31<br/>
+ * 	<li> delta - DOUBLE</li><br/>
+ * 	<li> value - DOUBLE</li>
+ * <br/>
+ * The structure would be like<br/>
+ * <pre>
+ * <code>
+ * TimeSeriesEntry {
+ * 	key = "K"
+ * 	startTime = 2018-12-03(in millis since epoch)
+ * 	endTime   = 2018-12-31(in millis since epoch)
+ *	storedStartTime = 2018-12-03(in millis since epoch)
+ * 	storedEndTime   = 2018-12-31(in millis since epoch)
+ * 	integerTimeSeriesFields = NULL
+ * 	longTimeSeriesFields = NULL
+ * 	doubleTimeSeriesFields = {
+ * 			delta=[0.001, 0.0002.......],
+ * 			value=[0.001, 0.0002.......]
+ * 		}
+ * }
+ * </code>
+ * </pre>
+ * 
+ * @author dsatija
+ *
+ */
 public class TimeSeriesEntry {
 	String key;
+	/**
+	 * Start time of the time series as stored in data store
+	 */
 	long startTime;
+	/**
+	 * End time of time series as stored in data store
+	 */
 	long endTime;
+	/**
+	 * Start time of time series for cache storage(only used for caching operations when we want to store subset of all time series for key)
+	 */
 	long storedEndTime;
+	/**
+	 * End time of time series for cache storage(only used for caching operations when we want to store subset of all time series for key)
+	 */
 	long storedStartTime;
+	/**
+	 * Used to implement multithreaded caching strategy
+	 */
 	private AtomicReference<Status> status = new AtomicReference<>(Status.JUST_LOADED);
+	/**
+	 * List if fields in Time Storing having Integer values
+	 */
 	Map<String, TIntArrayList> integerTimeSeriesFields;
+	/**
+	 * List if fields in Time Storing having Long values
+	 */
 	Map<String, TLongArrayList> longTimeSeriesFields;
+	/**
+	 * List if fields in Time Storing having Double values
+	 */
 	Map<String, TDoubleArrayList> doubleTimeSeriesFields;
+	/**
+	 * List if fields in Time Storing having String values
+	 */
 	Map<String, List<String>> stringTimeSeriesFields;
+	/**
+	 * Regular Interval object for generated time series
+	 */
 	IntervalType interval;
 	
 	public TimeSeriesEntry() {}
@@ -100,14 +161,15 @@ public class TimeSeriesEntry {
 	}
 	
 	/**
+	 * <pre>
 	 * Get sub sequence of time series based on <code>start</code> & <code>end</code> parameters
 	 * The <code>interval</code> can be used to define a new calendar specs which are different
 	 * from the original TimeSeries
 	 * 
 	 * the function returns a new  {@code TimeSeriesEntry} with 
-	 * <code>start >= current time series start time</code>
-	 * <code>end <= current time series end time</code>
-	 * 
+	 * 		<code>start >= current time series start time</code>
+	 * 		<code>end <= current time series end time</code>
+	 * </pre>
 	 * @param start start time since epoch from where you wish to retrieve the time series
 	 * @param end end time since epoch untill which wish to retrieve the time series
 	 * @param interval the calender 
@@ -119,13 +181,16 @@ public class TimeSeriesEntry {
 	
 	
 	/**
+	 * <pre>
 	 * Get sub sequence of time series based on <code>start</code> & <code>end</code> parameters
 	 * The <code>interval</code> can be used to define a new calendar specs which are different
 	 * from the original TimeSeries
 	 * 
-	 * the function returns a new  {@code TimeSeriesEntry} with 
-	 * <code>start >= current time series start time</code>
-	 * <code>end <= current time series end time</code>
+	 * the function returns a new  {@code TimeSeriesEntry} with
+	 * 		<code>start >= current time series start time</code>
+	 * 		<code>end <= current time series end time</code><
+	 * </pre>
+	 * 
 	 * @param start start time since epoch from where you wish to retrieve the time series
 	 * @param end end time since epoch untill which wish to retrieve the time series
 	 * @param interval the calender 
@@ -139,14 +204,16 @@ public class TimeSeriesEntry {
 	}
 	
 	/**
+	 * <pre>
 	 * Create a new time series with the function applied to each entry for a univariate TimeSeries
 	 * and each row of a multivarite time series
 	 * 
 	 * the function returns a new  {@code TimeSeriesEntry} with 
-	 * <code>start >= current time series start time</code>
-	 * <code>end <= current time series end time</code>
+	 * 		<code>start >= current time series start time</code>
+	 * 		<code>end <= current time series end time</code>
 	 * 
 	 * with the applicable calendar defined by {@code IntervalType}
+	 * </pre>
 	 * @param start start time since epoch from where you wish to retrieve the time series
 	 * @param end end time since epoch untill which wish to retrieve the time series
 	 * @param interval the calender 
@@ -160,14 +227,16 @@ public class TimeSeriesEntry {
 	}
 	
 	/**
+	 * <pre>
 	 * Create a new time series with the function applied to each entry for a univariate TimeSeries
 	 * and each row of a multivarite time series
 	 * 
 	 * the function returns a new  {@code TimeSeriesEntry} with 
-	 * <code>start >= current time series start time</code>
-	 * <code>end <= current time series end time</code>
+	 * 		<code>start >= current time series start time</code>
+	 * 		<code>end <= current time series end time</code>
 	 * 
 	 * with the applicable calendar defined by {@code IntervalType}
+	 * </pre>
 	 * @param start start time since epoch from where you wish to retrieve the time series
 	 * @param end end time since epoch until which wish to retrieve the time series
 	 * @param interval the calender 
@@ -183,14 +252,16 @@ public class TimeSeriesEntry {
 	}
 	
 	/**
+	 * <pre>
 	 * Create a new rolling time series with the function applied to each entry for a univariate TimeSeries
 	 * and each row of a multivarite time series
 	 * 
 	 * the function returns a new  {@code TimeSeriesEntry} with 
-	 * <code>start >= current time series start time</code>
-	 * <code>end <= current time series end time</code>
+	 * 		<code>start >= current time series start time</code>
+	 * 		<code>end <= current time series end time</code>
 	 * 
 	 * with the applicable calendar defined by {@code IntervalType}
+	 * </pre>
 	 * @param start start time since epoch from where you wish to retrieve the time series
 	 * @param end end time since epoch until which wish to retrieve the time series
 	 * @param interval the calender 
@@ -205,14 +276,16 @@ public class TimeSeriesEntry {
 	}
 	
 	/**
+	 * <pre>
 	 * Create a new time series with the function applied to each entry for a univariate TimeSeries
 	 * and each row of a multivarite time series
 	 * 
 	 * the function returns a new  {@code TimeSeriesEntry} with 
-	 * <code>start >= current time series start time</code>
-	 * <code>end <= current time series end time</code>
+	 * 		<code>start >= current time series start time</code>
+	 * 		<code>end <= current time series end time</code>
 	 * 
 	 * with the applicable calendar defined by {@code IntervalType}
+	 * </pre>
 	 * @param start start time since epoch from where you wish to retrieve the time series
 	 * @param end end time since epoch untill which wish to retrieve the time series
 	 * @param interval the calender 
@@ -221,6 +294,7 @@ public class TimeSeriesEntry {
 	 * @param fieldPredicateMap Map containing predicate to be applied to each field
 	 * @return
 	 */
+	
 	@SuppressWarnings("rawtypes")
 	public TimeSeriesEntry applyWithFilter(long start, long end, IntervalType interval, 
 			Map<String, Function> fieldBasedFunctionMap,
@@ -229,14 +303,16 @@ public class TimeSeriesEntry {
 	}
 	
 	/**
+	 * <pre>
 	 * Create a new time series with the function applied to each entry for a univariate TimeSeries
 	 * and each row of a multivarite time series
 	 * 
 	 * the function returns a new  {@code TimeSeriesEntry} with 
-	 * <code>start >= current time series start time</code>
-	 * <code>end <= current time series end time</code>
+	 * 		<code>start >= current time series start time</code>
+	 * 		<code>end <= current time series end time</code>
 	 * 
 	 * with the applicable calendar defined by {@code IntervalType}
+	 * </pre<
 	 * @param start start time since epoch from where you wish to retrieve the time series
 	 * @param end end time since epoch until which wish to retrieve the time series
 	 * @param interval the calender 
