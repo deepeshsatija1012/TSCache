@@ -7,21 +7,30 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.bfm.app.timeseries.classifiers.IntervalType;
+
 
 public class TimeSeriesEntryBuilder<T extends TimeSeriesEntry> {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TimeSeriesEntryBuilder.class);
 	private Map<String, Class<?>> fieldTypeMap = new HashMap<>();
 	private String key;
 	private Supplier<T> objectBuilder;
-	private long actualOffSet;
-	private long lastEntry;
-	private long lastStoredEntry;
-	private long storedOffSet;
+	private long startTime;
+	private long endTime;
+	private long storedEndTime;
+	private long storedStartTime;
+	private IntervalType interval;
 	
 	public TimeSeriesEntryBuilder<T> reset() {
 		key = null; objectBuilder=null;
 		fieldTypeMap.clear();
-		actualOffSet = lastEntry = lastStoredEntry = storedOffSet = 0L;
+		startTime = endTime = storedEndTime = storedStartTime = 0L;
+		interval = null;
+		return this;
+	}
+	
+	public TimeSeriesEntryBuilder<T> interval(IntervalType interval){
+		this.interval = interval;
 		return this;
 	}
 	
@@ -35,23 +44,23 @@ public class TimeSeriesEntryBuilder<T extends TimeSeriesEntry> {
 		return this;
 	}
 	
-	public TimeSeriesEntryBuilder<T> actualOffSet(long actualOffSet){
-		this.actualOffSet = actualOffSet;
+	public TimeSeriesEntryBuilder<T> startTime(long startTime){
+		this.startTime = startTime;
 		return this;
 	}
 
-	public TimeSeriesEntryBuilder<T> lastEntry(long lastEntry){
-		this.lastEntry = lastEntry;
+	public TimeSeriesEntryBuilder<T> endTime(long endTime){
+		this.endTime = endTime;
 		return this;
 	}
 	
-	public TimeSeriesEntryBuilder<T> lastStoredEntry(long lastStoredEntry){
-		this.lastStoredEntry = lastStoredEntry;
+	public TimeSeriesEntryBuilder<T> storedEndTime(long storedEndTime){
+		this.storedEndTime = storedEndTime;
 		return this;
 	}
 	
-	public TimeSeriesEntryBuilder<T> storedOffSet(long storedOffSet){
-		this.storedOffSet = storedOffSet;
+	public TimeSeriesEntryBuilder<T> storedStartTime(long storedStartTime){
+		this.storedStartTime = storedStartTime;
 		return this;
 	}
 	
@@ -70,10 +79,11 @@ public class TimeSeriesEntryBuilder<T extends TimeSeriesEntry> {
 	
 	public T build() {
 		T tsEntry = objectBuilder.get();
-		tsEntry.actualOffSet = actualOffSet;
-		tsEntry.lastEntry = lastEntry;
-		tsEntry.storedOffSet = storedOffSet;
-		tsEntry.lastStoredEntry = lastStoredEntry;
+		tsEntry.startTime = startTime;
+		tsEntry.endTime = endTime;
+		tsEntry.storedStartTime = storedStartTime;
+		tsEntry.storedEndTime = storedEndTime;
+		tsEntry.interval = interval;
 		
 		tsEntry.key = this.key;
 		for(Map.Entry<String, Class<?>> entry : fieldTypeMap.entrySet()) {

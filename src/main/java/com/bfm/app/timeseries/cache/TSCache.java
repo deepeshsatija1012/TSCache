@@ -288,7 +288,7 @@ public class TSCache<K, V extends TimeSeriesEntry, D> {
 	
 	private Node<K,V> getTimeSeriesValue(K key, Node<K, V> node) {
 		V value = node.getValue();
-		if(value.getStoredOffSet()<this.start || value.getLastEntry()>this.end) {
+		if(value.getStoredStartTime()<this.start || value.getStoredEndTime()>this.end) {
 			return node;
 		}
 		value = TimeSeriesEntryUtils.restrictedClone(value, start, end, interval, threadlocalBuilders.get(), fieldTypeMap, 

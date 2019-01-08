@@ -25,7 +25,7 @@ public class TimeSeriesEntryUtils {
 		if(ts.getStatus()==Status.JUST_LOADED) {
 			return true;
 		}else {
-			if(start<ts.getStoredOffSet() || end>ts.getLastStoredEntry()) {
+			if(start<ts.getStoredStartTime() || end>ts.getStoredEndTime()) {
 				return false;
 			}else {
 				return true;
@@ -35,15 +35,15 @@ public class TimeSeriesEntryUtils {
 	
 	public static <T extends TimeSeriesEntry> T restrictedClone(T original, long start, long end, IntervalType interval, 
 			TimeSeriesEntryBuilder<T> builder, Map<String, Class<?>> fieldTypeMap, Supplier<T> objectSupplier) {
-		if(original.actualOffSet>=start && original.lastEntry<=end) {
+		if(original.startTime>=start && original.endTime<=end) {
 			return original;
 		}
-		builder.actualOffSet(original.actualOffSet);builder.lastEntry(original.lastEntry);
-		builder.storedOffSet(Math.max(original.storedOffSet, start));builder.lastStoredEntry(Math.min(original.lastStoredEntry, end));
+		builder.startTime(original.startTime);builder.endTime(original.endTime);
+		builder.storedStartTime(Math.max(original.storedStartTime, start));builder.storedEndTime(Math.min(original.storedEndTime, end));
 		builder.fieldTypeMap(fieldTypeMap);
 		builder.objectBuilder(objectSupplier);
 		T newValue = builder.build();
-		int startIndex = interval.getIndex(start, original.actualOffSet), endIndex = interval.getIndex(end, original.actualOffSet)+1;
+		int startIndex = interval.getIndex(start, original.startTime), endIndex = interval.getIndex(end, original.startTime)+1;
 		for(Map.Entry<String, Class<?>> entry : fieldTypeMap.entrySet()) {
 			if(entry.getValue()==int.class || entry.getValue()==Integer.class) {
 				TIntArrayList intValues = original.getIntField(entry.getKey());
