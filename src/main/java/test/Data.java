@@ -43,8 +43,8 @@ public class Data {
 			builder.objectBuilder(ParametricTimeSeries::new);
 			builder.addField("deltas", Double.class);
 			builder.addField("values", Double.class);
-			builder.actualOffSet(time);builder.lastEntry(end);
-			builder.storedOffSet(time); builder.lastStoredEntry(end);
+			builder.startTime(time);builder.endTime(end);
+			builder.storedStartTime(time); builder.storedEndTime(end);
 			TDoubleArrayList list = TDoubleArrayList.wrap(ArrayUtils.clone(DOUBLE_DATA));
 			ParametricTimeSeries ts = builder.build();
 			ts.setDeltas(list); ts.setValues(levelList);

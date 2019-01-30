@@ -1,5 +1,6 @@
 package com.bfm.app.timeseries;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,11 +22,11 @@ public class TimeSeriesEntryUtils {
 		return ts.updatStatus();
 	}
 	
-	public static boolean canUseThis(TimeSeriesEntry ts, long start, long end) {
+	public static boolean canUseThis(TimeSeriesEntry ts, LocalDateTime start, LocalDateTime end) {
 		if(ts.getStatus()==Status.JUST_LOADED) {
 			return true;
 		}else {
-			if(start<ts.getStoredStartTime() || end>ts.getStoredEndTime()) {
+			if(start.compareTo(ts.getStoredStartTime())<0 || end.compareTo(ts.getStoredEndTime())>0) {
 				return false;
 			}else {
 				return true;
@@ -33,13 +34,13 @@ public class TimeSeriesEntryUtils {
 		}
 	}
 	
-	public static <T extends TimeSeriesEntry> T restrictedClone(T original, long start, long end, IntervalType interval, 
+	public static <T extends TimeSeriesEntry> T restrictedClone(T original, LocalDateTime start, LocalDateTime end, IntervalType interval, 
 			TimeSeriesEntryBuilder<T> builder, Map<String, Class<?>> fieldTypeMap, Supplier<T> objectSupplier) {
-		if(original.startTime>=start && original.endTime<=end) {
+		if(original.startTime.compareTo(start)>=0 && original.endTime.compareTo(end)<=0) {
 			return original;
 		}
 		builder.startTime(original.startTime);builder.endTime(original.endTime);
-		builder.storedStartTime(Math.max(original.storedStartTime, start));builder.storedEndTime(Math.min(original.storedEndTime, end));
+		builder.storedStartTime(original.storedStartTime.compareTo(start)>0?original.storedStartTime:start);builder.storedEndTime(original.storedEndTime.compareTo(end)<0?original.storedEndTime:end);
 		builder.fieldTypeMap(fieldTypeMap);
 		builder.objectBuilder(objectSupplier);
 		T newValue = builder.build();

@@ -1,5 +1,8 @@
 package com.bfm.app.timeseries;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -12,19 +15,21 @@ import com.bfm.app.timeseries.classifiers.IntervalType;
 
 public class TimeSeriesEntryBuilder<T extends TimeSeriesEntry> {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TimeSeriesEntryBuilder.class);
+	private static final Supplier<TimeSeriesEntry> TS_ENTRY_SUPPLIER = () -> new TimeSeriesEntry(); 
+	
 	private Map<String, Class<?>> fieldTypeMap = new HashMap<>();
 	private String key;
 	private Supplier<T> objectBuilder;
-	private long startTime;
-	private long endTime;
-	private long storedEndTime;
-	private long storedStartTime;
+	private LocalDateTime startTime;
+	private LocalDateTime endTime;
+	private LocalDateTime storedEndTime;
+	private LocalDateTime storedStartTime;
 	private IntervalType interval;
 	
 	public TimeSeriesEntryBuilder<T> reset() {
 		key = null; objectBuilder=null;
 		fieldTypeMap.clear();
-		startTime = endTime = storedEndTime = storedStartTime = 0L;
+		startTime = endTime = storedEndTime = storedStartTime = null;
 		interval = null;
 		return this;
 	}
@@ -45,21 +50,41 @@ public class TimeSeriesEntryBuilder<T extends TimeSeriesEntry> {
 	}
 	
 	public TimeSeriesEntryBuilder<T> startTime(long startTime){
-		this.startTime = startTime;
+		this.startTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(startTime), ZoneId.systemDefault());
 		return this;
 	}
 
 	public TimeSeriesEntryBuilder<T> endTime(long endTime){
-		this.endTime = endTime;
+		this.endTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(endTime), ZoneId.systemDefault());;
 		return this;
 	}
 	
 	public TimeSeriesEntryBuilder<T> storedEndTime(long storedEndTime){
-		this.storedEndTime = storedEndTime;
+		this.storedEndTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(storedEndTime), ZoneId.systemDefault());;
 		return this;
 	}
 	
 	public TimeSeriesEntryBuilder<T> storedStartTime(long storedStartTime){
+		this.storedStartTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(storedStartTime), ZoneId.systemDefault());;
+		return this;
+	}
+	
+	public TimeSeriesEntryBuilder<T> startTime(LocalDateTime startTime){
+		this.startTime = startTime;
+		return this;
+	}
+
+	public TimeSeriesEntryBuilder<T> endTime(LocalDateTime endTime){
+		this.endTime = endTime;
+		return this;
+	}
+	
+	public TimeSeriesEntryBuilder<T> storedEndTime(LocalDateTime storedEndTime){
+		this.storedEndTime = storedEndTime;
+		return this;
+	}
+	
+	public TimeSeriesEntryBuilder<T> storedStartTime(LocalDateTime storedStartTime){
 		this.storedStartTime = storedStartTime;
 		return this;
 	}
@@ -78,7 +103,8 @@ public class TimeSeriesEntryBuilder<T extends TimeSeriesEntry> {
 	}
 	
 	public T build() {
-		T tsEntry = objectBuilder.get();
+		@SuppressWarnings("unchecked")
+		T tsEntry = objectBuilder==null?((T) TS_ENTRY_SUPPLIER.get()):objectBuilder.get();
 		tsEntry.startTime = startTime;
 		tsEntry.endTime = endTime;
 		tsEntry.storedStartTime = storedStartTime;

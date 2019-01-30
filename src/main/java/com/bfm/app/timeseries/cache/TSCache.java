@@ -1,7 +1,6 @@
 package com.bfm.app.timeseries.cache;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -155,7 +154,7 @@ public class TSCache<K, V extends TimeSeriesEntry, D> {
 	private EvictionListener<K, V> listener;
 	
 	private final Map<String, Class<?>> fieldTypeMap = new HashMap<>();
-	private long start, end;
+	private LocalDateTime start, end;
 	private Supplier<V> objectSupplier;
 
 	public TSCache(String cacheName, IntervalType intervalType, Function<K, D> singleEntryLoader,
@@ -177,7 +176,7 @@ public class TSCache<K, V extends TimeSeriesEntry, D> {
 		this.listener = listener;
 		
 		this.fieldTypeMap.putAll(fieldTypeMap);
-		this.start = startDate.atZone(ZoneId.systemDefault()).toEpochSecond(); this.end = endDate.atZone(ZoneId.systemDefault()).toEpochSecond();
+		this.start = startDate; this.end = endDate;
 		this.objectSupplier = objectSupplier;
 	}
 
@@ -288,7 +287,7 @@ public class TSCache<K, V extends TimeSeriesEntry, D> {
 	
 	private Node<K,V> getTimeSeriesValue(K key, Node<K, V> node) {
 		V value = node.getValue();
-		if(value.getStoredStartTime()<this.start || value.getStoredEndTime()>this.end) {
+		if(value.getStoredStartTime().compareTo(this.start)<0 || value.getStoredEndTime().compareTo(this.end)>0) {
 			return node;
 		}
 		value = TimeSeriesEntryUtils.restrictedClone(value, start, end, interval, threadlocalBuilders.get(), fieldTypeMap, 
@@ -296,7 +295,7 @@ public class TSCache<K, V extends TimeSeriesEntry, D> {
 		return evictionStrategy.getNode(node.getKey(), value);
 	}
 	
-	public V get(K key, long start, long end) {
+	public V get(K key, LocalDateTime start, LocalDateTime end) {
 		V val;
 		Node<K, V> node = cache.computeIfAbsent(key, k -> {
 			acquireWithEvict(1);
@@ -330,7 +329,7 @@ public class TSCache<K, V extends TimeSeriesEntry, D> {
 		return val;
 	}
 	
-	public Map<K, V> get(Set<K> keys, long start, long end) {
+	public Map<K, V> get(Set<K> keys, LocalDateTime start, LocalDateTime end) {
 		int hits = 0;
 		Map<K, V> result = Maps.newLinkedHashMap();
 		Set<K> keysToLoad = Sets.newLinkedHashSet();

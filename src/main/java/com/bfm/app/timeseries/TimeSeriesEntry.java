@@ -1,9 +1,14 @@
 package com.bfm.app.timeseries;
 
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -51,19 +56,19 @@ public class TimeSeriesEntry {
 	/**
 	 * Start time of the time series as stored in data store
 	 */
-	long startTime;
+	LocalDateTime startTime;
 	/**
 	 * End time of time series as stored in data store
 	 */
-	long endTime;
+	LocalDateTime endTime;
 	/**
 	 * Start time of time series for cache storage(only used for caching operations when we want to store subset of all time series for key)
 	 */
-	long storedEndTime;
+	LocalDateTime storedEndTime;
 	/**
 	 * End time of time series for cache storage(only used for caching operations when we want to store subset of all time series for key)
 	 */
-	long storedStartTime;
+	LocalDateTime storedStartTime;
 	/**
 	 * Used to implement multithreaded caching strategy
 	 */
@@ -136,19 +141,19 @@ public class TimeSeriesEntry {
 		this.key = key;
 	}
 
-	public long getStartTime() {
+	public LocalDateTime getStartTime() {
 		return startTime;
 	}
 
-	public long getStoredStartTime() {
+	public LocalDateTime getStoredStartTime() {
 		return storedStartTime;
 	}
 	
-	public long getEndTime() {
+	public LocalDateTime getEndTime() {
 		return endTime;
 	}
 
-	public long getStoredEndTime() {
+	public LocalDateTime getStoredEndTime() {
 		return storedEndTime;
 	}
 
@@ -175,8 +180,82 @@ public class TimeSeriesEntry {
 	 * @param interval the calender 
 	 * @return
 	 */
-	public TimeSeriesEntry sample(long start, long end, IntervalType interval) {
-		return null;
+	public TimeSeriesEntry sample(LocalDateTime start, LocalDateTime end, IntervalType interval) {
+		int actualStartIndex = this.interval.getClosetNextIndex(start, this.storedStartTime);
+		LocalDateTime actualStartTime = this.interval.getClosestTimeNextTo(start);
+		int actualEndIndex = this.interval.getClosetPreviousIndex(end, this.storedStartTime);
+		LocalDateTime actualEndTime = this.interval.getClosestTimePrevTo(end);
+		TimeSeriesEntry modified =  new TimeSeriesEntry();
+		modified.startTime = this.startTime; modified.endTime = this.endTime;
+		modified.storedStartTime = actualStartTime; modified.storedEndTime = actualEndTime;
+		modified.interval = interval; modified.key = this.key;
+		Set<Integer> indexesForHolidays = new HashSet<>();
+		for(LocalDateTime holiday : interval.getHolidays()) {
+			if(holiday.compareTo(storedStartTime)>=0 && holiday.compareTo(storedEndTime)<0) {
+				int index = this.interval.getIndex(holiday, storedStartTime);
+				if(index!=-1) {
+					indexesForHolidays.add(index);
+				}
+			}
+		}
+		if(doubleTimeSeriesFields!=null) {
+			for(Map.Entry<String, TDoubleArrayList> doubleFieldTSEntry : doubleTimeSeriesFields.entrySet()) {
+				TDoubleArrayList list = (TDoubleArrayList) doubleFieldTSEntry.getValue();
+				TDoubleArrayList newList = new TDoubleArrayList(actualEndIndex-actualStartIndex) ;
+				for(int i=actualStartIndex;i<actualEndIndex;i++) {
+					if(!indexesForHolidays.contains(i))
+						newList.add(list.get(i));
+				}
+				
+				if(modified.doubleTimeSeriesFields==null) {
+					modified.doubleTimeSeriesFields = new HashMap<>();
+				}
+				modified.doubleTimeSeriesFields.put(doubleFieldTSEntry.getKey(), newList);
+			}
+		}
+		if(integerTimeSeriesFields!=null) {
+			for(Map.Entry<String, TIntArrayList> integerFieldTSEntry : integerTimeSeriesFields.entrySet()) {
+				TIntArrayList list = (TIntArrayList) integerFieldTSEntry.getValue();
+				TIntArrayList newList = new TIntArrayList(actualEndIndex-actualStartIndex) ;
+				for(int i=actualStartIndex;i<actualEndIndex;i++) {
+					if(!indexesForHolidays.contains(i))
+						newList.add(list.get(i));
+				}
+				if(modified.integerTimeSeriesFields==null) {
+					modified.integerTimeSeriesFields = new HashMap<>();
+				}
+				modified.integerTimeSeriesFields.put(integerFieldTSEntry.getKey(), newList);
+			}
+		}
+		if(longTimeSeriesFields!=null) {
+			for(Map.Entry<String, TLongArrayList> longFieldTSEntry : longTimeSeriesFields.entrySet()) {
+				TLongArrayList list = (TLongArrayList) longFieldTSEntry.getValue();
+				TLongArrayList newList = new TLongArrayList(actualEndIndex-actualStartIndex) ;
+				for(int i=actualStartIndex;i<actualEndIndex;i++) {
+					if(!indexesForHolidays.contains(i))
+						newList.add(list.get(i));
+				}
+				if(modified.longTimeSeriesFields==null) {
+					modified.longTimeSeriesFields = new HashMap<>();
+				}
+				modified.longTimeSeriesFields.put(longFieldTSEntry.getKey(), newList);
+			}
+		}
+		if(stringTimeSeriesFields!=null) {
+			for(Map.Entry<String, List<String>> stringFieldTSEntry : stringTimeSeriesFields.entrySet()) {
+				List<String> list = new ArrayList<>(stringFieldTSEntry.getValue().subList(actualStartIndex, actualEndIndex));
+				List<String> newList = new ArrayList<>(actualEndIndex-actualStartIndex);
+				for(int i=actualStartIndex;i<actualEndIndex;i++) {
+					if(!indexesForHolidays.contains(i))
+						newList.add(list.get(i));
+				}
+				if(modified.stringTimeSeriesFields==null) {
+					modified.stringTimeSeriesFields = new HashMap<>();
+				}
+				modified.stringTimeSeriesFields.put(stringFieldTSEntry.getKey(), newList);
+			}
+		}
+		return modified;
 	}
 	
 	
@@ -198,9 +277,81 @@ public class TimeSeriesEntry {
 	 * @param unit the unit definition, Days, Months, Seconds etc 
 	 * @return
 	 */
-	public TimeSeriesEntry sample(long start, long end, IntervalType interval, 
+	public TimeSeriesEntry sample(LocalDateTime start, LocalDateTime end, IntervalType interval, 
 			long unitJump, ChronoField unit) {
-		return null;
+		int actualStartIndex = this.interval.getClosetNextIndex(start, this.storedStartTime);
+		LocalDateTime actualStartTime = this.interval.getClosestTimeNextTo(start);
+		int actualEndIndex = this.interval.getClosetPreviousIndex(end, this.storedStartTime);
+		LocalDateTime actualEndTime = this.interval.getClosestTimePrevTo(end);
+		TimeSeriesEntry modified =  new TimeSeriesEntry();
+		modified.startTime = this.startTime; modified.endTime = this.endTime;
+		modified.storedStartTime = actualStartTime; modified.storedEndTime = actualEndTime;
+		modified.interval = interval; modified.key = this.key;
+		Set<Integer> indexesForHolidays = new HashSet<>();
+		for(LocalDateTime holiday : interval.getHolidays()) {
+			int index = this.interval.getIndex(holiday, modified.storedStartTime);
+			if(index!=-1) {
+				indexesForHolidays.add(index);
+			}
+		}
+		if(doubleTimeSeriesFields!=null) {
+			for(Map.Entry<String, TDoubleArrayList> doubleFieldTSEntry : doubleTimeSeriesFields.entrySet()) {
+				TDoubleArrayList list = (TDoubleArrayList) doubleFieldTSEntry.getValue();
+				TDoubleArrayList newList = new TDoubleArrayList(actualEndIndex-actualStartIndex) ;
+				for(int i=actualStartIndex;i<actualEndIndex;i++) {
+					if(!indexesForHolidays.contains(i))
+						newList.add(list.get(i));
+				}
+				
+				if(modified.doubleTimeSeriesFields==null) {
+					modified.doubleTimeSeriesFields = new HashMap<>();
+				}
+				modified.doubleTimeSeriesFields.put(doubleFieldTSEntry.getKey(), newList);
+			}
+		}
+		if(integerTimeSeriesFields!=null) {
+			for(Map.Entry<String, TIntArrayList> integerFieldTSEntry : integerTimeSeriesFields.entrySet()) {
+				TIntArrayList list = (TIntArrayList) integerFieldTSEntry.getValue();
+				TIntArrayList newList = new TIntArrayList(actualEndIndex-actualStartIndex) ;
+				for(int i=actualStartIndex;i<actualEndIndex;i++) {
+					if(!indexesForHolidays.contains(i))
+						newList.add(list.get(i));
+				}
+				if(modified.integerTimeSeriesFields==null) {
+					modified.integerTimeSeriesFields = new HashMap<>();
+				}
+				modified.integerTimeSeriesFields.put(integerFieldTSEntry.getKey(), newList);
+			}
+		}
+		if(longTimeSeriesFields!=null) {
+			for(Map.Entry<String, TLongArrayList> longFieldTSEntry : longTimeSeriesFields.entrySet()) {
+				TLongArrayList list = (TLongArrayList) longFieldTSEntry.getValue();
+				TLongArrayList newList = new TLongArrayList(actualEndIndex-actualStartIndex) ;
+				for(int i=actualStartIndex;i<actualEndIndex;i++) {
+					if(!indexesForHolidays.contains(i))
+						newList.add(list.get(i));
+				}
+				if(modified.longTimeSeriesFields==null) {
+					modified.longTimeSeriesFields = new HashMap<>();
+				}
+				modified.longTimeSeriesFields.put(longFieldTSEntry.getKey(), newList);
+			}
+		}
+		if(stringTimeSeriesFields!=null) {
+			for(Map.Entry<String, List<String>> stringFieldTSEntry : stringTimeSeriesFields.entrySet()) {
+				List<String> list = new ArrayList<>(stringFieldTSEntry.getValue().subList(actualStartIndex, actualEndIndex));
+				List<String> newList = new ArrayList<>(actualEndIndex-actualStartIndex);
+				for(int i=actualStartIndex;i<actualEndIndex;i++) {
+					if(!indexesForHolidays.contains(i))
+						newList.add(list.get(i));
+				}
+				if(modified.stringTimeSeriesFields==null) {
+					modified.stringTimeSeriesFields = new HashMap<>();
+				}
+				modified.stringTimeSeriesFields.put(stringFieldTSEntry.getKey(), newList);
+			}
+		}
+		return modified;
 	}
 	
 	/**
@@ -221,7 +372,7 @@ public class TimeSeriesEntry {
 	 * 			function is used
 	 * @return
 	 */
-	public TimeSeriesEntry apply(long start, long end, IntervalType interval, 
+	public TimeSeriesEntry apply(LocalDateTime start, LocalDateTime end, IntervalType interval, 
 			@SuppressWarnings("rawtypes") Map<String, Function> fieldBasedFunctionMap) {
 		return null;
 	}
@@ -245,7 +396,7 @@ public class TimeSeriesEntry {
 	 * @param increment the number of units to increment for next time series observation
 	 * @return
 	 */
-	public TimeSeriesEntry apply(long start, long end, IntervalType interval, 
+	public TimeSeriesEntry apply(LocalDateTime start, LocalDateTime end, IntervalType interval, 
 			@SuppressWarnings("rawtypes") Map<String, Function> fieldBasedFunctionMap,
 			long increment, ChronoField unit) {
 		return null;
@@ -269,7 +420,7 @@ public class TimeSeriesEntry {
 	 * @param windowSize the window size
 	 * @return
 	 */
-	public TimeSeriesEntry roll(long start, long end, IntervalType interval, 
+	public TimeSeriesEntry roll(LocalDateTime start, LocalDateTime end, IntervalType interval, 
 			@SuppressWarnings("rawtypes") Map<String, BinaryOperator> fieldBasedAccumulatorMap,
 			long windowSize) {
 		return null;
@@ -296,7 +447,7 @@ public class TimeSeriesEntry {
 	 */
 	
 	@SuppressWarnings("rawtypes")
-	public TimeSeriesEntry applyWithFilter(long start, long end, IntervalType interval, 
+	public TimeSeriesEntry applyWithFilter(LocalDateTime start, LocalDateTime end, IntervalType interval, 
 			Map<String, Function> fieldBasedFunctionMap,
 			Map<String, Predicate> fieldPredicateMap) {
 		return null;
@@ -324,11 +475,60 @@ public class TimeSeriesEntry {
 	 * @return
 	 */
 	@SuppressWarnings("rawtypes") 
-	public TimeSeriesEntry applyWithFilter(long start, long end, IntervalType interval, 
+	public TimeSeriesEntry applyWithFilter(LocalDateTime start, LocalDateTime end, IntervalType interval, 
 			Map<String, Function> fieldBasedFunctionMap,
 			Map<String, Predicate> fieldPredicateMap,
 			long increment, ChronoField unit) {
 		return null;
+	}
+	
+	
+	
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("key=").append(this.key).append(System.lineSeparator());
+		builder.append("startTime=").append(this.startTime).append(", endTime=").append(this.endTime).append(System.lineSeparator());
+		builder.append("storedStartTime=").append(this.storedStartTime).append(", storedEndTime=").append(this.storedEndTime).append(System.lineSeparator());
+		Map<Integer, Long> indexMap = this.interval.getIntervalRange(this.storedStartTime, this.storedEndTime, this.storedStartTime, this.interval);
+		if(doubleTimeSeriesFields!=null) {
+			for(Map.Entry<String, TDoubleArrayList> doubleFieldTSEntry : doubleTimeSeriesFields.entrySet()) {
+				builder.append("field = ").append(doubleFieldTSEntry.getKey()).append("[");
+				for(int i=0;i<doubleFieldTSEntry.getValue().size();i++) {
+					builder.append(this.interval.format(indexMap.get(i))).append("=").append(doubleFieldTSEntry.getValue().get(i)).append(", ");
+				}
+				builder.append("]").append(System.lineSeparator());
+			}
+		}
+		if(integerTimeSeriesFields!=null) {
+			for(Map.Entry<String, TIntArrayList> integerFieldTSEntry : integerTimeSeriesFields.entrySet()) {
+				builder.append("field = ").append(integerFieldTSEntry.getKey()).append("[");
+				for(int i=0;i<integerFieldTSEntry.getValue().size();i++) {
+					builder.append(this.interval.format(indexMap.get(i))).append("=").append(integerFieldTSEntry.getValue().get(i)).append(", ");
+				}
+				builder.append("]").append(System.lineSeparator());
+			}
+		}
+		if(longTimeSeriesFields!=null) {
+			for(Map.Entry<String, TLongArrayList> longFieldTSEntry : longTimeSeriesFields.entrySet()) {
+				builder.append("field = ").append(longFieldTSEntry.getKey()).append("[");
+				for(int i=0;i<longFieldTSEntry.getValue().size();i++) {
+					builder.append(this.interval.format(indexMap.get(i))).append("=").append(longFieldTSEntry.getValue().get(i)).append(", ");
+				}
+				builder.append("]").append(System.lineSeparator());
+			}
+		}
+		
+		if(stringTimeSeriesFields!=null) {
+			for(Map.Entry<String, List<String>> stringFieldTSEntry : stringTimeSeriesFields.entrySet()) {
+				builder.append("field = ").append(stringFieldTSEntry.getKey()).append("[");
+				for(int i=0;i<stringFieldTSEntry.getValue().size();i++) {
+					builder.append(this.interval.format(indexMap.get(i))).append("=").append(stringFieldTSEntry.getValue().get(i)).append(", ");
+				}
+				builder.append("]").append(System.lineSeparator());
+			}
+		}
+		return builder.toString();
 	}
 	
 	
